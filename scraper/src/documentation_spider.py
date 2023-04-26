@@ -10,6 +10,7 @@ from scrapy.spiders import SitemapSpider
 from scrapy.spiders.sitemap import regex
 import re
 import os
+import json
 
 # End of import for the sitemap behavior
 
@@ -19,6 +20,10 @@ from scrapy.exceptions import CloseSpider
 
 EXIT_CODE_EXCEEDED_RECORDS = 4
 
+class AttributeDict(dict):
+    __getattr__ = dict.__getitem__
+    __setattr__ = dict.__setitem__
+    __delattr__ = dict.__delitem__
 
 class DocumentationSpider(CrawlSpider, SitemapSpider):
     """
@@ -170,16 +175,32 @@ class DocumentationSpider(CrawlSpider, SitemapSpider):
             self.add_records(response, from_sitemap=True)
             # We don't return self.parse(response) in order to avoid crawling those web page
 
-    def parse_from_start_url(self, response):
+    def parse_from_start_url(self, old_response):
+        if "jobscore.zendesk.com" in old_response.request.url:
+            article_data = json.loads(old_response.body)['article']
+            new_body_html = '<h1>' + article_data['title'] + '</h1>'
+            new_body_html += article_data['body']
+            new_body_html = '<article>' + new_body_html + '</article>'
+
+            new_response = AttributeDict({
+                "encoding": "utf-8",
+                "body": AttributeDict({
+                    "decode": lambda x: new_body_html
+                }),
+                "url": article_data['html_url']
+            })
+        else:
+            new_response = old_response
+
         if self.reason_to_stop is not None:
             raise CloseSpider(reason=self.reason_to_stop)
 
-        if self.is_rules_compliant(response):
-            self.add_records(response, from_sitemap=False)
+        if self.is_rules_compliant(new_response):
+            self.add_records(new_response, from_sitemap=False)
         else:
-            print("\033[94m> Ignored: from start url\033[0m " + response.url)
+            print("\033[94m> Ignored: from start url\033[0m " + new_response.url)
 
-        return self.parse(response)
+        return self.parse(new_response)
 
     def is_rules_compliant(self, response):
 
@@ -189,6 +210,9 @@ class DocumentationSpider(CrawlSpider, SitemapSpider):
         if not self.scrape_start_urls and (
                 response.url in self.start_urls or response.request.url in self.start_urls):
             return False
+
+        if "support.jobscore.com" in response.url:
+            return True
 
         for rule in self._rules:
             if not self.strict_redirect:

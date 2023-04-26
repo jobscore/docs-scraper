@@ -79,6 +79,10 @@ def run_config(config):
         token = token_response["access_token"]
         headers.update({"Authorization": 'Bearer ' + token})
 
+
+    # bearer from zendesk (support articles)
+    headers.update({"Authorization": 'Bearer ' + os.getenv("ZENDESK_API_KEY")})
+
     DEFAULT_REQUEST_HEADERS = headers
 
     process = CrawlerProcess({
