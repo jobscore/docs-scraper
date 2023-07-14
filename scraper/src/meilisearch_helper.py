@@ -49,10 +49,10 @@ class MeiliSearchHelper:
         'rankingRules': [
             'words',
             'typo',
-            'attribute',
             'proximity',
             'exactness',
             'page_rank:desc',
+            'attribute',
             'level:desc',
             'position:asc'
         ],
@@ -75,7 +75,8 @@ class MeiliSearchHelper:
             'objectID',
             'page_rank',
             'level',
-            'position'
+            'position',
+            'page_rank'
         ],
         'displayedAttributes': [
             'hierarchy_radio_lvl0',
