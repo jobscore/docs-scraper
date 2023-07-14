@@ -1,4 +1,4 @@
-To publish any change to docker hub:
+### To publish any change to docker hub:
 
 1. Check current version at https://hub.docker.com/repository/docker/jobscoreci/docs-scraper/tags
 2. Run ```docker login``` and login with ```jobscoreci``` Docker Hub account
@@ -9,8 +9,17 @@ docker buildx create --name multi-platform --use
 docker buildx build --platform linux/amd64,linux/arm64 --push -t jobscoreci/docs-scraper:1.X .
 ```
 
-Original README:
 ---
+---
+---
+---
+---
+---
+---
+---
+---
+
+### Original README:
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/meilisearch/integration-guides/main/assets/logos/logo.svg" alt="Meilisearch" width="200" height="200" />
