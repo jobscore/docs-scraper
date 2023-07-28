@@ -19,6 +19,48 @@ docker buildx build --platform linux/amd64,linux/arm64 --push -t jobscoreci/docs
 ---
 ---
 
+### Our findings
+
+There were some struggles to understand what the flag `global` means. Basically `global: true` will combine all matches for a combination of selectors into a single record (document). 
+
+there is a summary of our findings:
+
+#### Global is false
+When the flag is set to false, each match combination of the setting will generate a new document,
+Example:
+```
+lvl1: '.content'
+lvl2: '.content h1'
+```
+
+Will generate two documents, one containing only the data in `.content` and the other containing only the data in `.content h1`. Usually, this is not the desired behavior.
+
+#### Global is true
+When the flag is set to true, only one document will be created for this level,
+Example:
+
+```
+lvl1: { 
+  'selector': '.content',
+  'global': true'
+},
+lvl2: { 
+  'selector': '.content h1',
+  'global': true'
+}
+```
+
+Will generate one document with the data of `.content` on the lvl1 and the data of `.content h1` on lvl2. Usually this is the desired behavior.
+
+#### Multiple selectors
+When using multiple selectors, all matches will be created and stored as new documents:
+Example:
+```
+lvl2: `.content h1, .content h2`
+```
+May create one document containing the `h1`, and others containing the `h2`s, one document per `h2`.
+In conclusion, simplification of the settings file may help to display more readable results to the user;
+
 ### Original README:
 
 <p align="center">
