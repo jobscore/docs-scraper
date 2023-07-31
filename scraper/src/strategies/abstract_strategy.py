@@ -1,4 +1,5 @@
 from lxml.cssselect import CSSSelector
+import pdb
 import lxml
 import re
 import json
@@ -76,25 +77,37 @@ class AbstractStrategy:
         return self.config.min_indexed_level[selectors_key]
 
     @staticmethod
-    def itertext(node):
+    def itertext(node, level=None, selectors=None):
         tag = node.tag
         if not isinstance(tag, str) and tag is not None:
             return
 
         if node.text:
-            if node.tag not in AbstractStrategy.keep_tags:
+            keep_tag = False
+            allowed_tags_attrs = []
+
+            try:
+                allowed_tags_attrs = selectors[level]['keep_tags'][tag]
+                keep_tag = True
+            except (TypeError, KeyError):
+                keep_tag = False
+
+            if not keep_tag:
                 yield node.text
             else:
-                yield '<' + node.tag + '>' + node.text + '</' + node.tag + '>'
+                tag_attrs_to_include = [value for value in node.attrib.items() if value[0] in allowed_tags_attrs]
+
+                attrs = ' '.join([f" {k}='{v}'" for k, v in tag_attrs_to_include])
+                yield '<' + node.tag + attrs + '>' + node.text + '</' + node.tag + '>'
         for e in node:
-            for s in AbstractStrategy.itertext(e):
+            for s in AbstractStrategy.itertext(e, level, selectors):
                 yield s
             if e.tail:
                 yield e.tail
 
     @staticmethod
-    def escape(text):
-        text = html.escape(text)
+    def escape(text, level=None, selectors=None):
+        # text = html.escape(text)
 
         for tag in AbstractStrategy.keep_tags:
             opening_tag = "<" + tag + ">"
@@ -107,14 +120,14 @@ class AbstractStrategy:
         return text
 
     @staticmethod
-    def get_text(element, strip_chars=None):
+    def get_text(element, strip_chars=None, level=None, selectors=None):
         """Return the text content of a DOM node"""
         text = element
 
         # Do not call text_content if not needed (Ex. xpath selector with text() doesn't return a node but a string)
         if not isinstance(text, str):
             text = ""
-            for s in AbstractStrategy.itertext(element):
+            for s in AbstractStrategy.itertext(element, level, selectors):
                 text = text + " " + s
 
         # We call strip a first time for space, tab, newline, return and formfeed
@@ -126,10 +139,10 @@ class AbstractStrategy:
         if len(text) == 0:
             return None
 
-        return AbstractStrategy.escape(text)
+        return AbstractStrategy.escape(text, level, selectors)
 
     @staticmethod
-    def get_text_from_nodes(elements, strip_chars=None):
+    def get_text_from_nodes(elements, strip_chars=None, level=None, selectors=None):
         """
         Return the text content of a set of DOM nodes.
         elements can contain either an array of nodes or a custom data return from xpath
@@ -143,14 +156,14 @@ class AbstractStrategy:
             return None
 
         text = ' '.join(
-            [AbstractStrategy.get_text(element, strip_chars) for element in
+            [AbstractStrategy.get_text(element, strip_chars, level, selectors) for element in
              elements
-             if AbstractStrategy.get_text(element, strip_chars) is not None])
+             if AbstractStrategy.get_text(element, strip_chars, level, selectors) is not None])
 
         if len(text) == 0:
             return None
 
-        return AbstractStrategy.escape(text)
+        return AbstractStrategy.escape(text, level, selectors)
 
     @staticmethod
     def remove_from_dom(dom, exclude_selectors):
