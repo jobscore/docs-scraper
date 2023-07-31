@@ -101,7 +101,8 @@ class AbstractStrategy:
                 yield e.tail
 
     @staticmethod
-    def escape(text, level=None, selectors=None):
+    def escape(text):
+        """We don't want to escape every html, and there is no selector-level config for that (sigh)"""
         # text = html.escape(text)
 
         for tag in AbstractStrategy.keep_tags:
@@ -134,7 +135,7 @@ class AbstractStrategy:
         if len(text) == 0:
             return None
 
-        return AbstractStrategy.escape(text, level, selectors)
+        return AbstractStrategy.escape(text)
 
     @staticmethod
     def get_text_from_nodes(elements, strip_chars=None, level=None, selectors=None):
