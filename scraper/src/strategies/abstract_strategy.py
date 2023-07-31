@@ -1,5 +1,4 @@
 from lxml.cssselect import CSSSelector
-import pdb
 import lxml
 import re
 import json
@@ -79,44 +78,22 @@ class AbstractStrategy:
     @staticmethod
     def itertext(node, level=None, selectors=None):
         tag = node.tag
-        node_classname_attr = ""
         if not isinstance(tag, str) and tag is not None:
             return
 
-        classnames_to_ignore = None
-
-        try:
-            classnames_to_ignore = selectors[level]['classname_exclude']
-        except (TypeError, KeyError):
-            classnames_to_ignore = None
-
-        try:
-            node_classname_attr = [x[1] for x in node.attrib.items() if x[0] == 'class'][0]
-        except (TypeError, KeyError, IndexError):
-            node_classname_attr = ""
-
-        if classnames_to_ignore is not None and any(class_to_ignore in node_classname_attr for class_to_ignore in classnames_to_ignore):
+        if AbstractStrategy.will_skip_node(node, level, selectors):
             return
 
         if node.text or node.tag == 'img':
-            keep_tag = False
-            allowed_tags_attrs = []
-
-            try:
-                allowed_tags_attrs = selectors[level]['keep_tags'][tag]
-                keep_tag = True
-            except (TypeError, KeyError):
-                keep_tag = False
+            node_attrs_to_keep = AbstractStrategy.get_allowed_node_attrs(node, level, selectors)
 
             text = node.text if node.text is not None else ''
 
-            if not keep_tag:
+            if node_attrs_to_keep is None:
                 yield text
             else:
-                tag_attrs_to_include = [value for value in node.attrib.items() if value[0] in allowed_tags_attrs]
-
-                attrs = ' '.join([f" {k}='{v}'" for k, v in tag_attrs_to_include])
-                yield '<' + node.tag + attrs + '>' + text + '</' + node.tag + '>'
+                node_attrs_str = ' '.join([f" {k}='{v}'" for k, v in node_attrs_to_keep])
+                yield '<' + node.tag + node_attrs_str + '>' + text + '</' + node.tag + '>'
         for e in node:
             for s in AbstractStrategy.itertext(e, level, selectors):
                 yield s
@@ -200,6 +177,50 @@ class AbstractStrategy:
     def elements_are_equals(el1, el2):
         """Checks if two elements are actually the same"""
         return el1.getroottree().getpath(el1) == el2.getroottree().getpath(el2)
+
+    @staticmethod
+    def get_classnames_to_skip(level, selectors):
+        try:
+            return selectors[level]['classname_exclude']
+        except (TypeError, KeyError):
+            return None
+
+    @staticmethod
+    def get_node_classname(node):
+        try:
+            return [x[1] for x in node.attrib.items() if x[0] == 'class'][0]
+        except (TypeError, KeyError, IndexError):
+            return ""
+
+    @staticmethod
+    def will_skip_node(node, level, selectors):
+        """Skip node if it contains css class defined in classname_exclude array"""
+        classnames_to_skip = AbstractStrategy.get_classnames_to_skip(level, selectors)
+
+        if classnames_to_skip is None:
+            return False
+
+        node_classname_attr = AbstractStrategy.get_node_classname(node)
+
+        return any(classname_to_skip in node_classname_attr for classname_to_skip in classnames_to_skip)
+
+    @staticmethod
+    def get_allowed_node_attrs(node, level, selectors):
+        """
+        Return node attributes matching selector keep_tags
+        If keep_tags = [], selector is allowed, but without any additional attribute
+        """
+        allowed_tags_attrs = None
+
+        try:
+            allowed_tags_attrs = selectors[level]['keep_tags'][node.tag]
+        except (TypeError, KeyError):
+            allowed_tags_attrs = None
+
+        if allowed_tags_attrs is None:
+            return None
+
+        return [value for value in node.attrib.items() if value[0] in allowed_tags_attrs]
 
     @staticmethod
     def get_level_weight(level):
