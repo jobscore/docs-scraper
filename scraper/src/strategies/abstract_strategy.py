@@ -79,10 +79,26 @@ class AbstractStrategy:
     @staticmethod
     def itertext(node, level=None, selectors=None):
         tag = node.tag
+        node_classname_attr = ""
         if not isinstance(tag, str) and tag is not None:
             return
 
-        if node.text:
+        classnames_to_ignore = None
+
+        try:
+            classnames_to_ignore = selectors[level]['classname_exclude']
+        except (TypeError, KeyError):
+            classnames_to_ignore = None
+
+        try:
+            node_classname_attr = [x[1] for x in node.attrib.items() if x[0] == 'class'][0]
+        except (TypeError, KeyError, IndexError):
+            node_classname_attr = ""
+
+        if classnames_to_ignore is not None and any(class_to_ignore in node_classname_attr for class_to_ignore in classnames_to_ignore):
+            return
+
+        if node.text or node.tag == 'img':
             keep_tag = False
             allowed_tags_attrs = []
 
@@ -92,13 +108,15 @@ class AbstractStrategy:
             except (TypeError, KeyError):
                 keep_tag = False
 
+            text = node.text if node.text is not None else ''
+
             if not keep_tag:
-                yield node.text
+                yield text
             else:
                 tag_attrs_to_include = [value for value in node.attrib.items() if value[0] in allowed_tags_attrs]
 
                 attrs = ' '.join([f" {k}='{v}'" for k, v in tag_attrs_to_include])
-                yield '<' + node.tag + attrs + '>' + node.text + '</' + node.tag + '>'
+                yield '<' + node.tag + attrs + '>' + text + '</' + node.tag + '>'
         for e in node:
             for s in AbstractStrategy.itertext(e, level, selectors):
                 yield s
