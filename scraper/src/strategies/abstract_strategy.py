@@ -159,7 +159,7 @@ class AbstractStrategy:
         if len(text) == 0:
             return None
 
-        return AbstractStrategy.escape(text, level, selectors)
+        return AbstractStrategy.escape(text)
 
     @staticmethod
     def remove_from_dom(dom, exclude_selectors):
