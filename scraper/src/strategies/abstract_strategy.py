@@ -84,7 +84,7 @@ class AbstractStrategy:
         if AbstractStrategy.will_skip_node(node, level, selectors):
             return
 
-        if node.text or node.tag == 'img':
+        if node.text or node.tag == 'img' or node.tag == 'meta':
             node_attrs_to_keep = AbstractStrategy.get_allowed_node_attrs(node, level, selectors)
 
             text = node.text if node.text is not None else ''
