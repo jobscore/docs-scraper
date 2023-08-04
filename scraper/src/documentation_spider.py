@@ -178,10 +178,15 @@ class DocumentationSpider(CrawlSpider, SitemapSpider):
 
     def parse_from_start_url(self, old_response):
         if "jobscore.zendesk.com" in old_response.request.url:
-            article_data = json.loads(old_response.body)['article']
-            new_body_html = '<h1>' + article_data['title'] + '</h1>'
-            new_body_html += article_data['body']
+            response_body = json.loads(old_response.body)
+            article_data = response_body.get('article', {})
+
+            new_body_html = '<h1>' + article_data.get('title', '') + '</h1>'
+            new_body_html += article_data.get('body', '')
             new_body_html = '<article>' + new_body_html + '</article>'
+            new_body_html += '<section>' + json.dumps(response_body.get('sections', {})) + '</section>'
+            new_body_html += '<category>' + json.dumps(response_body.get('categories', {})) + '</category>'
+            new_body_html += '<tags>' + json.dumps(article_data.get('label_names', [])) + '</tags>'
 
             new_response = AttributeDict({
                 "encoding": "utf-8",
