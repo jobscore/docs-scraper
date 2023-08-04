@@ -72,6 +72,7 @@ class DocumentationSpider(CrawlSpider, SitemapSpider):
         self.name = config.index_uid
         self.allowed_domains = config.allowed_domains
         self.start_urls_full = config.start_urls
+        self.start_url_configs = dict([(start_url['url'], start_url)  for start_url in config.start_urls])
         self.start_urls = [start_url['url'] for start_url in config.start_urls]
         # We need to ensure that the stop urls are scheme agnostic too if it represents URL
         self.stop_urls = [DocumentationSpider.to_any_scheme(stop_url) for
@@ -140,7 +141,7 @@ class DocumentationSpider(CrawlSpider, SitemapSpider):
         # We crawl the start URL in order to ensure we didn't miss anything (Even if we used the sitemap)
         for url in self.start_urls:
             yield Request(url,
-                          callback=self.parse_from_start_url if self.scrape_start_urls else self.parse,
+                          callback=self.parse_from_start_url if self.start_url_configs[url].get('scrape_start_url', True) else self.parse,
                           # If we wan't to crawl (default behavior) without scraping, we still need to let the
                           # crawling spider acknowledge the content by parsing it with the built-in method
                           meta={
@@ -177,10 +178,15 @@ class DocumentationSpider(CrawlSpider, SitemapSpider):
 
     def parse_from_start_url(self, old_response):
         if "jobscore.zendesk.com" in old_response.request.url:
-            article_data = json.loads(old_response.body)['article']
-            new_body_html = '<h1>' + article_data['title'] + '</h1>'
-            new_body_html += article_data['body']
+            response_body = json.loads(old_response.body)
+            article_data = response_body.get('article', {})
+
+            new_body_html = '<h1>' + article_data.get('title', '') + '</h1>'
+            new_body_html += article_data.get('body', '')
             new_body_html = '<article>' + new_body_html + '</article>'
+            new_body_html += '<section>' + json.dumps(response_body.get('sections', {})) + '</section>'
+            new_body_html += '<category>' + json.dumps(response_body.get('categories', {})) + '</category>'
+            new_body_html += '<tags>' + json.dumps(article_data.get('label_names', [])) + '</tags>'
 
             new_response = AttributeDict({
                 "encoding": "utf-8",

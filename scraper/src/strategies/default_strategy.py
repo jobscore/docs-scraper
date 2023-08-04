@@ -116,7 +116,7 @@ class DefaultStrategy(AbstractStrategy):
 
             # We only save content for the 'text' matches
             content = None if current_level != 'content' else self.get_text(
-                node, self.get_strip_chars(current_level, selectors))
+                node, self.get_strip_chars(current_level, selectors), current_level, selectors)
 
             if (
                     content is None or content == "") and current_level == 'content':
@@ -215,7 +215,9 @@ class DefaultStrategy(AbstractStrategy):
                     matching_nodes,
                     self.get_strip_chars(attribute_name,
                                          selectors[current_level][
-                                             'attributes'])
+                                             'attributes']),
+                    current_level,
+                    selectors
                 )
             return attributes
 
@@ -223,7 +225,7 @@ class DefaultStrategy(AbstractStrategy):
             return self.global_content[current_level]
 
         return self.get_text(node,
-                             self.get_strip_chars(current_level, selectors))
+                             self.get_strip_chars(current_level, selectors), current_level, selectors)
 
     @staticmethod
     def _get_closest_anchor(anchors):
@@ -279,7 +281,9 @@ class DefaultStrategy(AbstractStrategy):
                 matching_dom_nodes = self.select(level_selector['selector'])
                 self.global_content[level] = self.get_text_from_nodes(
                     matching_dom_nodes,
-                    self.get_strip_chars(level, selectors))
+                    self.get_strip_chars(level, selectors),
+                    level,
+                    selectors)
 
                 if self.global_content[level] is None and level_selector[
                     'default_value'] is not None:
