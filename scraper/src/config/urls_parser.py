@@ -106,6 +106,12 @@ class UrlsParser:
         return start_urls
 
     @staticmethod
+    def get_url_path(url):
+        scheme, netloc, path = urlparse(url)[0:3]
+
+        return "" + scheme + "://" + netloc + path
+
+    @staticmethod
     def get_extra_facets(start_urls):
         extra_facets = []
         for start_url in start_urls:
@@ -175,3 +181,12 @@ class UrlsParser:
                     if value is not None:
                         current_page_url = current_page_url.replace(value, '')
                         yield attr, value, current_page_url
+
+                            # Check if tags are defined for the current_page or one of the parent page
+    @staticmethod
+    def get_start_url_attribute(current_page_url, start_urls, attribute):
+        if current_page_url is not None:
+            for start_url in start_urls:
+                if start_url['compiled_url'].match(current_page_url):
+                    return start_url[attribute]
+        return None

@@ -144,12 +144,10 @@ class DefaultStrategy(AbstractStrategy):
                     'level': self.get_level_weight(current_level),
                     'position': position
                 },
-                'url': current_page_url,
-                'url_without_variables': current_page_url
+                'url': current_page_url
             }
 
-            extra_attributes = UrlsParser.get_extra_attributes(
-                current_page_url, self.config.start_urls)
+            extra_attributes = UrlsParser.get_extra_attributes(current_page_url, self.config.start_urls)
 
             for key in list(extra_attributes.keys()):
                 record[key] = extra_attributes[key]
@@ -177,18 +175,21 @@ class DefaultStrategy(AbstractStrategy):
 
             if current_page_url is not None:
                 # Add variables to the record
-                for attr, value, url_without_variables in UrlsParser.get_url_variables(
+                for attr, value, _ in UrlsParser.get_url_variables(
                         current_page_url, self.config.start_urls):
-                    record['url_without_variables'] = url_without_variables
                     record[attr] = value
 
-                record['url_without_anchor'] = record['url']
-                record['url'] = self._get_url_with_anchor(record['url'],
-                                                          record['anchor'])
-                record['url_without_variables'] = self._get_url_with_anchor(
-                    record['url_without_variables'], record['anchor'])
-                record['no_variables'] = record['url'] == record[
-                    'url_without_variables']
+                record['url_full'] = self._get_url_with_anchor(record['url'], record['anchor'])
+                ignore_query_params = UrlsParser.get_start_url_attribute(
+                    current_page_url,
+                    self.config.start_urls,
+                    'ignore_query_params'
+                )
+
+                if ignore_query_params:
+                    record['url'] = UrlsParser.get_url_path(record['url'])
+                else:
+                    record['url'] = record['url_full']
 
             # Define our own ObjectID to enable proper analytics
             hierarchy_to_hash = {lvl: x for lvl, x in hierarchy.items() if
