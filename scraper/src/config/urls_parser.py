@@ -182,7 +182,7 @@ class UrlsParser:
                         current_page_url = current_page_url.replace(value, '')
                         yield attr, value, current_page_url
 
-                            # Check if tags are defined for the current_page or one of the parent page
+    # Retrieve attribute in matching start_url object
     @staticmethod
     def get_start_url_attribute(current_page_url, start_urls, attribute):
         if current_page_url is not None:

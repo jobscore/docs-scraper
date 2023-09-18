@@ -147,7 +147,8 @@ class DefaultStrategy(AbstractStrategy):
                 'url': current_page_url
             }
 
-            extra_attributes = UrlsParser.get_extra_attributes(current_page_url, self.config.start_urls)
+            extra_attributes = UrlsParser.get_extra_attributes(
+                current_page_url, self.config.start_urls)
 
             for key in list(extra_attributes.keys()):
                 record[key] = extra_attributes[key]
