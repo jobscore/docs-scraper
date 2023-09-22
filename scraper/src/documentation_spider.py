@@ -186,7 +186,14 @@ class DocumentationSpider(CrawlSpider, SitemapSpider):
             new_body_html = '<article>' + new_body_html + '</article>'
             new_body_html += '<section>' + json.dumps(response_body.get('sections', {})) + '</section>'
             new_body_html += '<category>' + json.dumps(response_body.get('categories', {})) + '</category>'
-            new_body_html += '<tags>' + json.dumps(article_data.get('label_names', [])) + '</tags>'
+
+            tags_data = article_data.get('label_names', [])
+            tags_html = []
+
+            for tag_label in tags_data:
+                tags_html.append('<tag>' + tag_label + '</tag>')
+
+            new_body_html += '<tags>' + "".join(tags_html)  + '</tags>'
 
             new_response = AttributeDict({
                 "encoding": "utf-8",

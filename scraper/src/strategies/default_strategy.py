@@ -281,11 +281,31 @@ class DefaultStrategy(AbstractStrategy):
             level_selector = selectors[level]
             if level not in levels or level_selector['global']:
                 matching_dom_nodes = self.select(level_selector['selector'])
-                self.global_content[level] = self.get_text_from_nodes(
-                    matching_dom_nodes,
-                    self.get_strip_chars(level, selectors),
-                    level,
-                    selectors)
+
+                """
+                    @tiagosr:
+                    Selectors with "global: true" will concatenate multiple matches in a single string.
+                    Use it alongside with "global_as_array: true" to return an array of matches and parse each separately.
+                """
+                if level_selector['global'] and level_selector.get('global_as_array', False):
+                    content_list_for_level = []
+
+                    for dom_node in matching_dom_nodes:
+                        matching_node_text = self.get_text(
+                            dom_node,
+                            self.get_strip_chars(level, selectors),
+                            level,
+                            selectors
+                        )
+                        content_list_for_level.append(matching_node_text)
+
+                    self.global_content[level] = content_list_for_level
+                else:
+                    self.global_content[level] = self.get_text_from_nodes(
+                        matching_dom_nodes,
+                        self.get_strip_chars(level, selectors),
+                        level,
+                        selectors)
 
                 if self.global_content[level] is None and level_selector[
                     'default_value'] is not None:
