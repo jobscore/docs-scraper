@@ -16,14 +16,14 @@ class CustomDownloaderMiddleware:
         self.driver = CustomDownloaderMiddleware.driver
 
     def process_request(self, request, spider):
-        skip_js_render = False
+        js_render = False
 
         for start_url in spider.start_urls_full:
             if start_url['compiled_url'].match(request.url):
-                skip_js_render = start_url.get('skip_js_render', False)
+                js_render = start_url.get('js_render', False)
                 break
 
-        if not spider.js_render or skip_js_render:
+        if not spider.js_render or not js_render:
             return None
 
         if spider.remove_get_params:
