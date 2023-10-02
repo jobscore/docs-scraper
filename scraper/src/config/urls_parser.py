@@ -188,5 +188,5 @@ class UrlsParser:
         if current_page_url is not None:
             for start_url in start_urls:
                 if start_url['compiled_url'].match(current_page_url):
-                    return start_url[attribute]
+                    return start_url.get(attribute, None)
         return None

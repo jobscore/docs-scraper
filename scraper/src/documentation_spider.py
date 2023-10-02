@@ -181,12 +181,28 @@ class DocumentationSpider(CrawlSpider, SitemapSpider):
             response_body = json.loads(old_response.body)
             article_data = response_body.get('article', {})
 
+            sections_data = response_body.get('sections', [])
+            categories_data = response_body.get('categories', [])
+
             new_body_html = '<h1>' + article_data.get('title', '') + '</h1>'
             new_body_html += article_data.get('body', '')
             new_body_html = '<article>' + new_body_html + '</article>'
-            new_body_html += '<section>' + json.dumps(response_body.get('sections', {})) + '</section>'
-            new_body_html += '<category>' + json.dumps(response_body.get('categories', {})) + '</category>'
-            new_body_html += '<tags>' + json.dumps(article_data.get('label_names', [])) + '</tags>'
+            new_body_html += '<section format="json">' + json.dumps(sections_data) + '</section>'
+            new_body_html += '<category format="json">' + json.dumps(categories_data) + '</category>'
+
+            tags_data = article_data.get('label_names', [])
+            meta_filter_tags = []
+
+            for tag_label in tags_data:
+                meta_filter_tags.append('<tag format="string">' + tag_label + '</tag>')
+
+            for section in sections_data:
+                meta_filter_tags.append('<section format="string">' + section.get('name') + '</section>')
+
+            for category in categories_data:
+                meta_filter_tags.append('<category format="string">' + category.get('name') + '</category>')
+
+            new_body_html += '<meta-filters>' + "".join(meta_filter_tags)  + '</meta-filters>'
 
             new_response = AttributeDict({
                 "encoding": "utf-8",
