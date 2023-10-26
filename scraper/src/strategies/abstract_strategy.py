@@ -87,7 +87,12 @@ class AbstractStrategy:
         if node.text or node.tag == 'img' or node.tag == 'meta':
             node_attrs_to_keep = AbstractStrategy.get_allowed_node_attrs(node, level, selectors)
 
-            text = node.text if node.text is not None else ''
+            text = ''
+
+            if AbstractStrategy.use_meta_content(level, selectors):
+                text = AbstractStrategy.get_meta_content(node)
+            elif node.text is not None:
+                text = node.text
 
             if node_attrs_to_keep is None:
                 yield text
@@ -204,6 +209,21 @@ class AbstractStrategy:
         node_classname_attr = AbstractStrategy.get_node_classname(node)
 
         return any(classname_to_skip in node_classname_attr for classname_to_skip in classnames_to_skip)
+
+    @staticmethod
+    def use_meta_content(level, selectors):
+        uses_meta_content = False
+
+        try:
+            uses_meta_content = selectors[level]['meta_tag']
+        except (TypeError, KeyError):
+            uses_meta_content = False
+
+        return uses_meta_content or False
+
+    @staticmethod
+    def get_meta_content(node):
+        return node.attrib['content'] or ''
 
     @staticmethod
     def get_allowed_node_attrs(node, level, selectors):

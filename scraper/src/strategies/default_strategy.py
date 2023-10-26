@@ -2,6 +2,7 @@
 Default Strategy
 """
 
+from lxml.cssselect import CSSSelector
 from lxml.etree import XPath
 from .abstract_strategy import AbstractStrategy
 from .anchor import Anchor
@@ -38,12 +39,35 @@ class DefaultStrategy(AbstractStrategy):
             return []
 
         self.dom = self.get_dom(response)
+
+        if self.ignore_page(response.url):
+            print("\033[94m> Ignore from noindex:\033[0m " + response.url)
+            return []
+
         self.dom = self.remove_from_dom(self.dom,
                                         self.config.selectors_exclude)
 
         records = self.get_records_from_dom(response.url)
 
         return records
+
+    def ignore_page(self, url):
+        noindex_meta_field = UrlsParser.get_start_url_attribute(
+            url,
+            self.config.start_urls,
+            'noindex_meta_field'
+        )
+
+        if not noindex_meta_field:
+            return False
+
+        matches = CSSSelector("meta[name='" + noindex_meta_field + "']")(self.dom)
+
+        if matches:
+            meta_content = self.get_meta_content(matches[0])
+            return "noindex" in meta_content
+        else:
+            return False
 
     def _update_hierarchy_with_global_content(self, hierarchy,
                                               current_level_int):
@@ -135,9 +159,6 @@ class DefaultStrategy(AbstractStrategy):
                 'hierarchy_radio': Hierarchy.get_hierarchy_radio(hierarchy,
                                                                  current_level,
                                                                  levels),
-                'type': current_level,
-                'tags': UrlsParser.get_tags(current_page_url,
-                                            self.config.start_urls),
                 'weight': {
                     'page_rank': UrlsParser.get_page_rank(current_page_url,
                                                           self.config.start_urls),
