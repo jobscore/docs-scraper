@@ -14,7 +14,7 @@ class UrlsParser:
             if isinstance(start_url, str):
                 start_url = {'url': start_url}
 
-            start_url['compiled_url'] = re.compile(start_url['url'])
+            start_url['compiled_url'] = re.compile(start_url.get('regex', start_url['url']))
 
             if "scrape" not in start_url:
                 start_url['scrape'] = True
@@ -28,7 +28,7 @@ class UrlsParser:
             if "selectors_key" not in start_url:
                 start_url['selectors_key'] = 'default'
 
-            matches = UrlsParser.get_url_variables_name(start_url['url'])
+            matches = UrlsParser.get_url_variables_name(start_url.get('regex', start_url['url']))
 
             start_url['url_attributes'] = {}
             for match in matches:
